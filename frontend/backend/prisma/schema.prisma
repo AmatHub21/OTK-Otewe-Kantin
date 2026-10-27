@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  name        String
+  category    String
+  price       Int
+  description String      @db.Text
+  image       String      @db.Text
+  stock       Int         @default(0)
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique
+  customerName    String
+  customerPhone   String
+  customerEmail   String?
+  fulfillment     String
+  address         String?       @db.Text
+  note            String?       @db.Text
+  total           Int
+  status          String        @default("MENUNGGU_PEMBAYARAN")
+  paymentStatus   String        @default("BELUM_DIBAYAR")
+  paymentMethod   String        @default("Tunai")
+  midtransOrderId String?       @unique
+  snapToken       String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  items           OrderItem[]
+  paymentEvents   PaymentEvent[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  name      String
+  price     Int
+  quantity  Int
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model PaymentEvent {
+  id        String   @id @default(cuid())
+  orderId   String
+  status    String
+  payload   Json
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
